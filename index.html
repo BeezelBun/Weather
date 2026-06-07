@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Met Office Weather</title>
+
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIINfQybLN7Goq4Yp1I7YLC6c4R8t3bV+ZQ="
+        crossorigin="">
+
+  <link rel="stylesheet" href="./styles.css?v=0.1.0">
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-icon" aria-hidden="true">☔</span>
+        <span class="brand-text">
+          <span class="brand-title">Met Office Weather</span>
+          <span class="brand-subtitle">DataHub map images</span>
+        </span>
+      </div>
+
+      <span class="version-pill" id="versionPill">v0.1.0</span>
+    </header>
+
+    <section class="map-frame" aria-label="Met Office map">
+      <div id="map"></div>
+    </section>
+
+    <aside class="panel" id="panel" aria-label="Weather controls">
+      <button class="panel-toggle"
+              id="panelToggle"
+              type="button"
+              aria-expanded="true"
+              aria-controls="panelBody">
+        <span class="panel-open-label">Collapse whole panel</span>
+        <span class="panel-closed-label">Met Office controls</span>
+      </button>
+
+      <div class="panel-body" id="panelBody">
+        <section class="panel-section">
+          <h1>Met Office layer</h1>
+          <p class="help-text">
+            Official Met Office DataHub PNG overlays only. No Open-Meteo, no generated grid.
+          </p>
+        </section>
+
+        <section class="panel-section">
+          <div class="warning">
+            Keep the API key out of GitHub. This page only stores it in this browser when you tick remember.
+          </div>
+
+          <label class="field">
+            <span>API key</span>
+            <input class="input" id="apiKey" type="password" autocomplete="off" placeholder="Paste Met Office DataHub API key">
+          </label>
+
+          <label class="check-row">
+            <input id="rememberKey" type="checkbox">
+            <span>Remember on this device</span>
+          </label>
+        </section>
+
+        <section class="panel-section">
+          <span class="section-title">Order</span>
+
+          <label class="field">
+            <span>Base URL</span>
+            <input class="input" id="baseUrl" type="url" spellcheck="false">
+          </label>
+
+          <label class="field">
+            <span>Order ID</span>
+            <input class="input" id="orderInput" type="text" spellcheck="false" placeholder="Example: your-precipitation-order">
+          </label>
+
+          <label class="field">
+            <span>Orders from key</span>
+            <select class="select" id="orderSelect">
+              <option value="">Press List orders</option>
+            </select>
+          </label>
+
+          <div class="button-grid">
+            <button class="button-secondary" id="listOrdersButton" type="button">List orders</button>
+            <button class="button" id="loadLatestButton" type="button">Load latest</button>
+          </div>
+        </section>
+
+        <section class="panel-section">
+          <span class="section-title">PNG frame</span>
+
+          <label class="field">
+            <span>File</span>
+            <select class="select" id="fileSelect">
+              <option value="">No files loaded</option>
+            </select>
+          </label>
+
+          <div class="button-grid">
+            <button class="button-secondary" id="previousFileButton" type="button">Previous</button>
+            <button class="button-secondary" id="nextFileButton" type="button">Next</button>
+          </div>
+
+          <label class="check-row">
+            <input id="includeLand" type="checkbox">
+            <span>Ask Met Office to include land layer</span>
+          </label>
+
+          <label class="field">
+            <span>Overlay opacity</span>
+            <span class="range-row">
+              <input id="opacity" type="range" min="10" max="100" value="84" step="1">
+              <output id="opacityOutput" for="opacity">84%</output>
+            </span>
+          </label>
+        </section>
+
+        <section class="panel-section">
+          <details>
+            <summary>Advanced image bounds</summary>
+            <p class="help-text">
+              Default uses the old UK Met Office map layer frame: south 48, west -12, north 61, east 5.
+            </p>
+
+            <div class="bounds-grid">
+              <label class="field">
+                <span>South</span>
+                <input class="input" id="southBound" type="number" step="0.01">
+              </label>
+              <label class="field">
+                <span>West</span>
+                <input class="input" id="westBound" type="number" step="0.01">
+              </label>
+              <label class="field">
+                <span>North</span>
+                <input class="input" id="northBound" type="number" step="0.01">
+              </label>
+              <label class="field">
+                <span>East</span>
+                <input class="input" id="eastBound" type="number" step="0.01">
+              </label>
+            </div>
+          </details>
+        </section>
+
+        <section class="panel-section">
+          <span class="section-title">Map actions</span>
+
+          <div class="button-grid">
+            <button class="button-secondary" id="fitButton" type="button">Fit layer</button>
+            <button class="button-danger" id="clearOverlayButton" type="button">Clear</button>
+          </div>
+
+          <div class="pixel-readout">
+            <span class="pixel-swatch" id="pixelSwatch" aria-hidden="true"></span>
+            <span id="pixelReadout">Click the map after loading a PNG to sample the rendered pixel colour.</span>
+          </div>
+        </section>
+
+        <section class="panel-section">
+          <span class="section-title">Diagnostics</span>
+          <dl class="diagnostics" id="diagnostics"></dl>
+          <div class="button-grid">
+            <button class="button-secondary" id="copyDebugButton" type="button">Copy debug</button>
+          </div>
+        </section>
+      </div>
+    </aside>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+          crossorigin=""></script>
+  <script src="./app.js?v=0.1.0"></script>
+</body>
+</html>
